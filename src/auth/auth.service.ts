@@ -1,10 +1,14 @@
 import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService    
+  ) {}
 
   async register(name: string, email: string, password: string) {
     const exists = await this.usersService.getUserByEmail(email);
@@ -24,6 +28,10 @@ export class AuthService {
 
 
     const { password: _, _id, ...rest } = user.toObject();
-    return { id: _id, ...rest };
+
+    const payload = { id: _id, email: user.email, name: user.name };
+    const token = this.jwtService.sign(payload);
+
+    return { user: { id: _id, ...rest }, token };
   }
 }
